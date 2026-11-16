@@ -1,0 +1,14 @@
+<nav>
+  <a href="/">🎄 Julekalender</a>
+
+  <% if (user) { %>
+    <a href="/profile">Min profil</a>
+    <% if (user.role === 'admin') { %>
+      <a href="/admin">Admin</a>
+    <% } %>
+    <a href="/logout">Logg ut</a>
+  <% } else { %>
+    <a href="/login">Logg inn</a>
+    <a href="/register">Registrer deg</a>
+  <% } %>
+</nav>
