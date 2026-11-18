@@ -5,6 +5,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const Door = require('./models/Door');
+const User = require('./models/User'); // NY
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -91,10 +92,12 @@ app.get('/', async (req, res) => {
 
 // TODO: GET /door/:number
 // TODO: POST /door/:number/answer
-// TODO: register, login, logout, profile
+//
 
-// ---------- 6. ADMIN ----------
-// TODO: /admin, /admin/answers, /admin/participants, /admin/doors
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
 
 // ---------- 7. FEILHÅNDTERING ----------
 app.use((req, res) => {
