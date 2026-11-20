@@ -1,7 +1,204 @@
-<%- include('partials/head') %>
+<%- include('partials/head', { extraCss: '/adminDashboard.css' }) %>
 <body>
-  <%- include('partials/nav') %>
-  
-  
+<%- include('partials/nav') %>
 
-  <body>
+  <main class="admin">
+    <h1>Adminpanel</h1>
+
+    <div class="tabs" role="tablist" aria-label="Adminpanel" hidden>
+      <button type="button" role="tab" id="tab-deltakere" data-panel="deltakere"
+              aria-controls="panel-deltakere" aria-selected="true">Deltakere</button>
+      <button type="button" role="tab" id="tab-svar" data-panel="svar"
+              aria-controls="panel-svar" aria-selected="false" tabindex="-1">Svar</button>
+      <button type="button" role="tab" id="tab-trekning" data-panel="trekning"
+              aria-controls="panel-trekning" aria-selected="false" tabindex="-1">Trekning</button>
+      <button type="button" role="tab" id="tab-sporsmal" data-panel="sporsmal"
+              aria-controls="panel-sporsmal" aria-selected="false" tabindex="-1">Spørsmål</button>
+    </div>
+
+    <!-- DELTAKERE -->
+    <section id="panel-deltakere" class="panel" role="tabpanel" aria-labelledby="tab-deltakere">
+      <h2>Deltakere</h2>
+      <div class="tabell-wrapper">
+        <table>
+          <caption>Alle registrerte brukere og antall svar</caption>
+          <thead>
+            <tr>
+              <th scope="col">Brukernavn</th>
+              <th scope="col">E-post</th>
+              <th scope="col">Rolle</th>
+              <th scope="col">Antall svar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach((u) => { %>
+              <tr>
+                <td><%= u.username %></td>
+                <td><%= u.email %></td>
+                <td><%= u.role %></td>
+                <td><%= countMap.get(String(u._id)) || 0 %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SVAR -->
+    <section id="panel-svar" class="panel" role="tabpanel" aria-labelledby="tab-svar">
+      <h2>Svar</h2>
+
+      <form method="GET" action="/admin#svar" class="filter">
+        <div>
+          <label for="q">Søk på navn eller e-post</label>
+          <input type="search" id="q" name="q" value="<%= q %>">
+        </div>
+        <div>
+          <label for="day">Luke</label>
+          <select id="day" name="day">
+            <option value="">Alle</option>
+            <% for (let i = 1; i <= 24; i++) { %>
+              <option value="<%= i %>" <%= day === i ? 'selected' : '' %>><%= i %></option>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="">Alle</option>
+            <option value="riktig" <%= status === 'riktig' ? 'selected' : '' %>>Riktig</option>
+            <option value="galt" <%= status === 'galt' ? 'selected' : '' %>>Galt</option>
+            <option value="ubehandlet" <%= status === 'ubehandlet' ? 'selected' : '' %>>Ikke vurdert</option>
+          </select>
+        </div>
+        <button type="submit">Filtrer</button>
+        <a href="/admin#svar" class="nullstill">Nullstill</a>
+      </form>
+
+      <div class="tabell-wrapper">
+        <table>
+          <caption>Innsendte svar</caption>
+          <thead>
+            <tr>
+              <th scope="col">Luke</th>
+              <th scope="col">Bruker</th>
+              <th scope="col">Svar</th>
+              <th scope="col">Status</th>
+              <th scope="col">Vurder</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (answers.length === 0) { %>
+              <tr><td colspan="5">Ingen svar funnet.</td></tr>
+            <% } %>
+            <% answers.forEach((a) => { %>
+              <% const navn = a.user ? a.user.username : 'Slettet bruker'; %>
+              <tr>
+                <td><%= a.day %></td>
+                <td><%= navn %></td>
+                <td><%= a.answer %></td>
+                <td>
+                  <%= a.correct === true ? 'Riktig' : a.correct === false ? 'Galt' : 'Ikke vurdert' %>
+                  <% if (a.isWinner) { %><strong>(vinner)</strong><% } %>
+                </td>
+                <td>
+                  <form method="POST" action="/admin/svar/<%= a._id %>/vurder" class="vurder">
+                    <button type="submit" name="correct" value="true"
+                            aria-label="Marker svaret fra <%= navn %> på luke <%= a.day %> som riktig">Riktig</button>
+                    <button type="submit" name="correct" value="false"
+                            aria-label="Marker svaret fra <%= navn %> på luke <%= a.day %> som galt">Galt</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TREKNING -->
+    <section id="panel-trekning" class="panel" role="tabpanel" aria-labelledby="tab-trekning">
+      <h2>Trekning av vinner</h2>
+      <form method="POST" action="/admin/trekk" class="filter">
+        <div>
+          <label for="trekk-day">Luke</label>
+          <select id="trekk-day" name="day" required>
+            <% for (let i = 1; i <= 24; i++) { %>
+              <option value="<%= i %>"><%= i %></option>
+            <% } %>
+          </select>
+        </div>
+        <button type="submit">Trekk vinner blant riktige svar</button>
+      </form>
+
+      <h3>Trukne vinnere</h3>
+      <% if (winners.length === 0) { %>
+        <p>Ingen vinnere er trukket ennå.</p>
+      <% } else { %>
+        <ul class="vinnere">
+          <% winners.forEach((w) => { %>
+            <li>Luke <%= w.day %>: <%= w.user ? w.user.username : 'Slettet bruker' %></li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+
+    <!-- SPØRSMÅL -->
+    <section id="panel-sporsmal" class="panel" role="tabpanel" aria-labelledby="tab-sporsmal">
+      <h2>Spørsmål</h2>
+      <% questions.forEach((qu) => { %>
+        <details>
+          <summary>Luke <%= qu.id %></summary>
+          <form method="POST" action="/admin/sporsmal/<%= qu.id %>">
+            <label for="sporsmal-<%= qu.id %>">Spørsmålstekst for luke <%= qu.id %></label>
+            <textarea id="sporsmal-<%= qu.id %>" name="question" rows="3" required><%= qu.question %></textarea>
+            <button type="submit">Lagre</button>
+          </form>
+        </details>
+      <% }) %>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const tablist = document.querySelector('[role="tablist"]');
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+      const names = tabs.map((t) => t.dataset.panel);
+
+      function show(name, moveFocus) {
+        tabs.forEach((tab) => {
+          const selected = tab.dataset.panel === name;
+          tab.setAttribute('aria-selected', String(selected));
+          tab.tabIndex = selected ? 0 : -1;
+          document.getElementById('panel-' + tab.dataset.panel).hidden = !selected;
+          if (selected && moveFocus) tab.focus();
+        });
+      }
+
+      tabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => {
+          show(tab.dataset.panel, false);
+          history.replaceState(null, '', '#' + tab.dataset.panel);
+        });
+
+        tab.addEventListener('keydown', (e) => {
+          let next = null;
+          if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+          if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+          if (e.key === 'Home') next = 0;
+          if (e.key === 'End') next = tabs.length - 1;
+          if (next === null) return;
+          e.preventDefault();
+          show(names[next], true);
+          history.replaceState(null, '', '#' + names[next]);
+        });
+      });
+
+      // Vis fanene først nå, siden de krever JavaScript
+      tablist.hidden = false;
+      const start = location.hash.slice(1);
+      show(names.includes(start) ? start : names[0], false);
+    })();
+  </script>
+</body>
+</html>

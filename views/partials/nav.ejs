@@ -1,4 +1,4 @@
-<nav>
+<nav aria-label="Hovedmeny">
   <a href="/">🎄 Julekalender</a>
 
   <% if (user) { %>
@@ -11,3 +11,7 @@
     <a href="/login">Logg inn</a>
   <% } %>
 </nav>
+
+<% if (flash) { %>
+  <p class="message" role="status"><%= flash.text %></p>
+<% } %>

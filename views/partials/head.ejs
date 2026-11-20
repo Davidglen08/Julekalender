@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Julekalender</title>
+  <title><%= locals.title || 'Julekalender' %></title>
   <link rel="stylesheet" href="/css/style.css">
-   <script src="/css/index.js" defer></script>
+  <% if (locals.extraCss) { %>
+    <link rel="stylesheet" href="<%= extraCss %>">
+  <% } %>
+  <script src="/css/index.js" defer></script>
 </head>
 <body>
