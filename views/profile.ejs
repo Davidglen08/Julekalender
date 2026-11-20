@@ -1,0 +1,67 @@
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/nav') %>
+
+  <main>
+    <h1>Min profil</h1>
+
+    <section class="profile-card" aria-labelledby="profile-heading">
+      <h2 id="profile-heading">Kontoinformasjon</h2>
+
+      <dl>
+        <dt>Brukernavn</dt>
+        <dd><%= user.username %></dd>
+
+        <dt>Skolemail</dt>
+        <dd><%= user.email %></dd>
+
+        <dt>Rolle</dt>
+        <dd><%= user.role === 'admin' ? 'Administrator' : 'Bruker' %></dd>
+      </dl>
+
+      <div class="profile-actions">
+        <a class="button" href="/">Til kalenderen</a>
+        <% if (user.role === 'admin') { %>
+          <a class="button" href="/admin">Admin</a>
+        <% } %>
+        <a class="button" href="/logout">Logg ut</a>
+      </div>
+    </section>
+
+    <section class="profile-card" aria-labelledby="answers-heading">
+      <h2 id="answers-heading">Mine svar</h2>
+
+      <% if (answers.length === 0) { %>
+        <p>Du har ikke svart på noen luker ennå.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Luke</th>
+                <th scope="col">Svar</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% answers.forEach(function(a) { %>
+                <tr>
+                  <td><%= a.day %></td>
+                  <td><%= a.answer %></td>
+                  <td>
+                    <% if (a.correct === true) { %>Riktig
+                    <% } else if (a.correct === false) { %>Feil
+                    <% } else { %>Venter på vurdering
+                    <% } %>
+                    <% if (a.isWinner) { %> – Vinner <span aria-hidden="true">🎉</span><% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>
