@@ -5,6 +5,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const Door = require('./models/Door');
+const Quizzes = require('./models/Quizzes');
+
 const User = require('./models/User'); // NY
 
 const app = express();
@@ -51,8 +53,10 @@ function getToday() {
   return { year: get('year'), month: get('month'), day: get('day') };
 }
 
-// Returnerer 'locked', 'today' eller 'past'
 function getDoorStatus(doorNumber, today) {
+  // Under utvikling: alle luker er åpne
+  if (process.env.OPEN_ALL_DOORS === 'true') return 'open';
+
   const calendarYear = Number(process.env.CALENDAR_YEAR) || today.year;
 
   // Gjør datoer om til tall som kan sammenlignes, f.eks. 20261205
@@ -95,16 +99,56 @@ app.get('/', async (req, res) => {
 //
 
 app.get('/login', (req, res) => {
-  res.render('login');
+    res.render('login');
 });
 
+app.post('/login', (req, res) => {
+
+  const { username, email } = req.body;
+
+  if(email.includes("@afk.no")) {
+    
+    res.redirect('/');
+
+  } else {
+    res.send("Du må bruke en @afk.no epost for å logge inn.");
+  }
+});
+
+
+app.get('/luke/:id', async (req, res) => {
+  try {
+    const number = Number(req.params.id);
+
+    if (!Number.isInteger(number) || number < 1 || number > 24) {
+      return res.status(404).send('Siden finnes ikke.');
+    }
+
+    if (getDoorStatus(number, getToday()) === 'locked') {
+      return res.status(403).send('Denne luken er ikke åpen ennå!');
+    }
+
+    const quiz = await Quizzes.findOne({ day: number }).lean();
+
+    if (!quiz) {
+      return res.status(404).send('Denne luken har ikke fått innhold ennå.');
+    }
+
+    res.render('door', { doorNumber: number, quiz });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Noe gikk galt. Prøv igjen senere.');
+  }
+});
 
 // ---------- 7. FEILHÅNDTERING ----------
 app.use((req, res) => {
   res.status(404).send('Siden finnes ikke.');
 });
 
+
 // ---------- 8. START SERVEREN ----------
 app.listen(PORT, () => {
   console.log(`Serveren kjører på http://localhost:${PORT}`);
+  console.log('Dagens dato i appen:', getToday());
 });

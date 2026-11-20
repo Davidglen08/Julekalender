@@ -1,0 +1,34 @@
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/nav') %>
+
+  <main>
+    <h1>Luke <%= doorNumber %></h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <p class="message message-error" role="alert"><%= error %></p>
+    <% } %>
+
+    <form action="/door/<%= doorNumber %>/answer" method="POST" class="quiz-form">
+      <fieldset>
+        <legend><%= quiz.question %></legend>
+
+        <% quiz.options.forEach(function(option, i) { %>
+          <div class="quiz-option">
+            <input type="radio"
+                   id="option-<%= i %>"
+                   name="answer"
+                   value="<%= option %>"
+                   required>
+            <label for="option-<%= i %>"><%= option %></label>
+          </div>
+        <% }) %>
+      </fieldset>
+
+      <button type="submit">Send svar</button>
+    </form>
+
+    <p><a href="/">Tilbake til kalenderen</a></p>
+  </main>
+</body>
+</html>
