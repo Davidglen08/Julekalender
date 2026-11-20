@@ -29,12 +29,19 @@ app.use(
     }
   })
 );
+// Engangsmelding som vises på neste side (og så forsvinner)
+app.use((req, res, next) => {
+  res.locals.flash = req.session.flash || null;
+  delete req.session.flash;
+  next();
+});
 
 // Gjør innlogget bruker tilgjengelig i alle EJS-filer (brukes i nav.ejs)
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
+
 
 // ---------- 3. DATABASE ----------
 mongoose
@@ -73,7 +80,8 @@ function getDoorStatus(doorNumber, today) {
 function requireLogin(req, res, next) {
   if (!req.session.user) {
     req.session.returnTo = req.originalUrl;
-    return res.redirect('/login');
+    req.session.flash = { text: 'Du må logge inn før du kan åpne en luke.' };
+    return res.redirect('/');
   }
   next();
 }

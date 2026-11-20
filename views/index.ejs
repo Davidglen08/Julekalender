@@ -10,6 +10,12 @@
         <h1>Julekalender</h1>
         <p class="calendar-intro">Trykk på dagens luke for å se dagens oppgave.</p>
 
+        <% if (flash) { %>
+          <p class="message message-error" role="alert">
+            <%= flash.text %> <a href="/login">Logg inn her</a>
+          </p>
+        <% } %>
+
         <ul class="calendar">
           <% doors.forEach(function(door) { %>
             <% if (door.status === 'today' || door.status === 'open') { %>
