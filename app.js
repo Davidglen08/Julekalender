@@ -68,6 +68,19 @@ function getDoorStatus(doorNumber, today) {
   return 'past';
 }
 
+function requireLogin(req, res, next) {
+  if (!req.session.user) return res.redirect('/login');
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.session.user) return res.redirect('/login');
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).send('Ingen tilgang.');
+  }
+  next();
+}
+
 // ---------- 5. RUTER FOR BRUKERE ----------
 app.get('/', async (req, res) => {
   try {
@@ -116,7 +129,7 @@ app.post('/login', (req, res) => {
 });
 
 
-app.get('/luke/:id', async (req, res) => {
+app.get('/luke/:id', requireLogin, async (req, res) => {
   try {
     const number = Number(req.params.id);
 
