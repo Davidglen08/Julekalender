@@ -1,40 +1,34 @@
 <%- include('partials/head') %>
+<body>
+  <%- include('partials/nav') %>
 
-  <body>
-    <%- include('partials/nav') %>
+  <main class="calendar-page">
+    <div class="calendar-scene">
+      <img class="scene-img" src="/css/images/chatsnobilde.jpg" alt="">
 
-      <main class="calendar-page">
-        <div class="calendar-scene">
-          <img class="scene-img" src="/css/images/chatsnobilde.jpg" alt="">
+      <div class="calendar-content">
+        <h1>Julekalender</h1>
+        <p class="calendar-intro">Trykk på dagens luke for å se dagens oppgave.</p>
 
-          <div class="calendar-content">
-            <h1>Julekalender</h1>
-            <p class="calendar-intro">Trykk på dagens luke for å se dagens oppgave.</p>
-
-            <ul class="calendar">
-              <% doors.forEach(function(door) { %>
-                <% if (door.status==='today' || door.status==='open' ) { %>
-                  <li class="door-<%= door.status %>">
-                    <a class="door-inner" href="/door/<%= door.number %>" aria-label="Luke <%= door.number %>, åpen">
-                      <span class="door-number">
-                        <%= door.number %>
-                      </span>
-                    </a>
-                  </li>
-                  <% } else { %>
-                    <li class="door-locked">
-                      <div class="door-inner" aria-disabled="true" aria-label="Luke <%= door.number %>, låst">
-                        <span class="door-number">
-                          <%= door.number %>
-                        </span>
-                      </div>
-                    </li>
-                    <% } %>
-                      <% }) %>
-            </ul>
-          </div>
-        </div>
-      </main>
-  </body>
-
-  </html>
+        <ul class="calendar">
+          <% doors.forEach(function(door) { %>
+            <% if (door.status === 'today' || door.status === 'open') { %>
+              <li class="door-<%= door.status %>">
+                <a class="door-inner" href="/luke/<%= door.number %>" aria-label="Luke <%= door.number %>, åpen">
+                  <span class="door-number"><%= door.number %></span>
+                </a>
+              </li>
+            <% } else { %>
+              <li class="door-locked">
+                <div class="door-inner" aria-disabled="true" aria-label="Luke <%= door.number %>, låst">
+                  <span class="door-number"><%= door.number %></span>
+                </div>
+              </li>
+            <% } %>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

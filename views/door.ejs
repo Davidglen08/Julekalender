@@ -2,33 +2,34 @@
 <body>
   <%- include('partials/nav') %>
 
-  <main>
-    <h1>Luke <%= doorNumber %></h1>
+  <main class="calendar-page">
+    <div class="calendar-scene">
+      <img class="scene-img" src="/css/images/chatsnobilde.jpg" alt="">
 
-    <% if (typeof error !== 'undefined' && error) { %>
-      <p class="message message-error" role="alert"><%= error %></p>
-    <% } %>
+      <div class="calendar-content">
+        <h1>Luke <%= doorNumber %></h1>
+        <p class="quiz-question"><%= quiz.question %></p>
 
-    <form action="/door/<%= doorNumber %>/answer" method="POST" class="quiz-form">
-      <fieldset>
-        <legend><%= quiz.question %></legend>
+        <% if (quiz.type === 'video' && quiz.video_url) { %>
+          <video controls src="<%= quiz.video_url %>"></video>
+        <% } %>
 
-        <% quiz.options.forEach(function(option, i) { %>
-          <div class="quiz-option">
-            <input type="radio"
-                   id="option-<%= i %>"
-                   name="answer"
-                   value="<%= option %>"
-                   required>
-            <label for="option-<%= i %>"><%= option %></label>
-          </div>
-        <% }) %>
-      </fieldset>
-
-      <button type="submit">Send svar</button>
-    </form>
-
-    <p><a href="/">Tilbake til kalenderen</a></p>
+        <form method="POST" action="/luke/<%= doorNumber %>/answer">
+          <% if (quiz.type === 'multiple_choice' && quiz.options && quiz.options.length) { %>
+            <% quiz.options.forEach(function(option) { %>
+              <label>
+                <input type="radio" name="answer" value="<%= option %>" required>
+                <%= option %>
+              </label>
+            <% }) %>
+          <% } else { %>
+            <label for="answer">Ditt svar</label>
+            <input type="text" id="answer" name="answer" required>
+          <% } %>
+          <button type="submit">Send svar</button>
+        </form>
+      </div>
+    </div>
   </main>
 </body>
 </html>

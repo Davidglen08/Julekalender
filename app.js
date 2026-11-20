@@ -4,10 +4,10 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
+
 const Door = require('./models/Door');
 const Quizzes = require('./models/Quizzes');
-
-const User = require('./models/User'); // NY
+const User = require('./models/User');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -22,7 +22,11 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 } // 24 timer
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 // 24 timer
+    }
   })
 );
 
@@ -53,10 +57,8 @@ function getToday() {
   return { year: get('year'), month: get('month'), day: get('day') };
 }
 
+// Returnerer 'locked', 'today' eller 'past'
 function getDoorStatus(doorNumber, today) {
-  // Under utvikling: alle luker er åpne
-  if (process.env.OPEN_ALL_DOORS === 'true') return 'open';
-
   const calendarYear = Number(process.env.CALENDAR_YEAR) || today.year;
 
   // Gjør datoer om til tall som kan sammenlignes, f.eks. 20261205
@@ -69,12 +71,18 @@ function getDoorStatus(doorNumber, today) {
 }
 
 function requireLogin(req, res, next) {
-  if (!req.session.user) return res.redirect('/login');
+  if (!req.session.user) {
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
   next();
 }
 
 function requireAdmin(req, res, next) {
-  if (!req.session.user) return res.redirect('/login');
+  if (!req.session.user) {
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
   if (req.session.user.role !== 'admin') {
     return res.status(403).send('Ingen tilgang.');
   }
@@ -107,27 +115,47 @@ app.get('/', async (req, res) => {
   }
 });
 
-// TODO: GET /door/:number
-// TODO: POST /door/:number/answer
-//
-
 app.get('/login', (req, res) => {
-    res.render('login');
+  if (req.session.user) return res.redirect('/');
+  res.render('login');
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
 
-  const { username, email } = req.body;
+    if (!username || !email.endsWith('@afk.no')) {
+      return res.status(400).render('login', {
+        error: 'Du må fylle ut brukernavn og bruke en @afk.no epost.'
+      });
+    }
 
-  if(email.includes("@afk.no")) {
-    
-    res.redirect('/');
+    // Finn brukeren, eller lag en ny (role blir 'user' som standard)
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({ username, email });
+    }
 
-  } else {
-    res.send("Du må bruke en @afk.no epost for å logge inn.");
+    req.session.user = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    };
+
+    const target = req.session.returnTo || '/';
+    delete req.session.returnTo;
+    res.redirect(target);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Noe gikk galt. Prøv igjen senere.');
   }
 });
 
+app.get('/profile', requireLogin, (req, res) => {
+  res.render('profile');
+});
 
 app.get('/luke/:id', requireLogin, async (req, res) => {
   try {
@@ -137,15 +165,21 @@ app.get('/luke/:id', requireLogin, async (req, res) => {
       return res.status(404).send('Siden finnes ikke.');
     }
 
-    if (getDoorStatus(number, getToday()) === 'locked') {
-      return res.status(403).send('Denne luken er ikke åpen ennå!');
+    // Kun dagens luke (eller testluker) kan åpnes
+    const status = getDoorStatus(number, getToday());
+    if (status !== 'today' && status !== 'open') {
+      return res.status(403).send('Denne luken er ikke åpen.');
     }
 
-    const quiz = await Quizzes.findOne({ day: number }).lean();
+    const doc = await Quizzes.findById('christmas-quiz').lean();
+    const found = doc?.questions?.find((q) => Number(q.id) === number);
 
-    if (!quiz) {
+    if (!found) {
       return res.status(404).send('Denne luken har ikke fått innhold ennå.');
     }
+
+    // Ikke send det riktige svaret til nettleseren
+    const { correct_answer, ...quiz } = found;
 
     res.render('door', { doorNumber: number, quiz });
   } catch (err) {
@@ -154,11 +188,17 @@ app.get('/luke/:id', requireLogin, async (req, res) => {
   }
 });
 
+// TODO: POST /luke/:id/answer
+
+// ---------- 6. RUTER FOR ADMIN ----------
+app.get('/admin', requireAdmin, (req, res) => {
+  res.render('adminDashboard');
+});
+
 // ---------- 7. FEILHÅNDTERING ----------
 app.use((req, res) => {
   res.status(404).send('Siden finnes ikke.');
 });
-
 
 // ---------- 8. START SERVEREN ----------
 app.listen(PORT, () => {
